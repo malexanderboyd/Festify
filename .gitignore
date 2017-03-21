@@ -10,7 +10,7 @@ $RECYCLE.BIN/
 
 # Don't want  these, can be installed with npm install
 node_modules/
-
+private/
 # Windows Installer files
 *.cab
 *.msi

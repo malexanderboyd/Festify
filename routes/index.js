@@ -12,7 +12,7 @@ var storage = multer.diskStorage({
 
 var upload = multer({ storage: storage })
 
-
+var gcs = require('../gc');
 
 
 
@@ -29,8 +29,20 @@ router.get('/test/:id', function(req, res, next)
 
 
 router.post('/test/submit', upload.single('fileUpload'), function(req, res, next) {
-  console.log("Uploaded  File!");
-  res.redirect('/test/1');
+
+    //console.log(req.file);
+    // fieldname:
+    // originalname:
+    // encoding
+    // mimetype
+    // destination
+    // filename
+    // path
+    // size
+    var upload = req.file;
+
+    gcs.uploadImageToBucket(upload);
+    gcs.retrieveText(upload);
 });
 
 module.exports = router;
