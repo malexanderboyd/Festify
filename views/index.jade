@@ -1,0 +1,12 @@
+extends layout
+
+block content
+  h1= title
+  p Welcome to #{title}
+  p Tacos are always fun for dayz
+
+  form(method='POST' action='/test/submit' enctype="multipart/form-data") 
+    div.form-group
+      input(type='file', placeholder='Upload Festival Pic', name='fileUpload')
+
+    button(type='submit') Signup

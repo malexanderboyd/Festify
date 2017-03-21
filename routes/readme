@@ -1,0 +1,22 @@
+3/21/2017
+
+Festify, Spotify Playlist Generator from Music Festival Lineups!
+
+WOP
+
+Using Nodejs, and Express (Web application framework)
+
+Next Steps
+- Take uploaded local image -> store into google bucket
+
+- Take image in google bucket -> run through cloud text
+
+-> take cloud text result -> return to server
+
+-> server takes result list -> spotify API search
+
+-> top 3 from search result -> generate list
+
+-> use generated list -> create spotify playlist
+
+-> finished spotify playlist -> return success to user with link to new playlist
