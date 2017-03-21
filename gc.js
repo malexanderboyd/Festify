@@ -1,5 +1,5 @@
 const Vision = require('@google-cloud/vision');
-
+const spotify = require('./spotify');
 
 const projectId = 'festify-162216';
 
@@ -26,7 +26,9 @@ module.exports = {
     bucket.upload(upload.path, function(err, file) {
       if (!err) {
         // "zebra.jpg" is now in your bucket.
-        console.log("File Uploaded!");
+        console.log("File Uploaded! Now Retrieving Text");
+        retrieveText(upload);
+
       }
       else {
         console.log(err);
@@ -34,20 +36,25 @@ module.exports = {
     });
 
   },
-  retrieveText: function(upload)
-  {
-    console.log("Retrieving Text");
-    visionClient.detectText(gcs.bucket('festify').file(upload.filename))
-    .then((results) => {
-      const detections = results[0];
 
-      console.log('Text:');
-      detections.forEach((text) => console.log(text));
-    },function(reason) {
-      console.log(reason.errors.errors);
-    });
 
-  }
+}
 
+function retrieveText(upload)
+{
+  console.log("Retrieving Text");
+  visionClient.detectText(gcs.bucket('festify').file(upload.filename))
+  .then((results) => {
+    const detections = results[0];
+
+    spotify.extractText(detections);
+    return true;
+
+  //console.log('Text:');
+  //  detections.forEach((text) => console.log(text));
+
+  },function(reason) {
+    console.log(reason.errors.errors);
+  });
 
 }

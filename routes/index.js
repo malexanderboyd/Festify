@@ -41,8 +41,9 @@ router.post('/test/submit', upload.single('fileUpload'), function(req, res, next
     // size
     var upload = req.file;
 
-    gcs.uploadImageToBucket(upload);
-    gcs.retrieveText(upload);
+    if(gcs.uploadImageToBucket(upload))
+      res.sendStatus(200);
+
 });
 
 module.exports = router;
