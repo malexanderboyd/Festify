@@ -1,9 +1,17 @@
+var environment = require('node-env-file');
+try{
+    environment('./private/spotify.env');
+}catch(e){
+  console.log("Couldn't find environment variables: " + e);
+}
+
 const SpotifyWebAPI = require('spotify-web-api-node');
 var spotifyClient = new SpotifyWebAPI({
-  clientId : '8969dde512b748f1b47555759c6226d5',
-  clientSecret : '640853b425d44374b4bb7619ccf33a5c',
+  clientId : process.env.CLIENTID,
+  clientSecret : process.env.CLIENTSECRET,
   redirectUri : 'http://localhost:3000/'
 });
+
 
       var ArtistList = [];
 
@@ -89,16 +97,14 @@ function extractHelper(subset)
     var searchTerm = localSet.toString();
     searchTerm = searchTerm.replace(/,/g, " ");
 
-  sleep(1200);
-  // Search artists whose name contains
+  sleep(1200);    // spotify api pls dont blow up
+
+  // Search artists whose name contains current searchTerm
   spotifyClient.searchArtists(searchTerm, { limit: 1 })
   .then(function(data){
 
     console.log("Search  Term: " + searchTerm);
-    if (err) {
-      console.error('Something went wrong', err.message);
-      return;
-    }
+    console.log(data);
     if(data != null && data.body != null && data.body.artist != null && data.body.artist.items != null && data.body.artist.items[0] != null)
     {
         console.log("Found match, added to list");
@@ -115,8 +121,8 @@ function extractHelper(subset)
     .catch(function(err) {
       console.error(err);
     });
-     // spotify api pls dont blow up
-    // end of spotify clientSecret
+
+
 
 } // end of helper
 
