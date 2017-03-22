@@ -91,7 +91,9 @@ function extractHelper(subset)
 
   sleep(1200);
   // Search artists whose name contains
-  spotifyClient.searchArtists(searchTerm, { limit: 1 }, function(err, data) {
+  spotifyClient.searchArtists(searchTerm, { limit: 1 })
+  .then(function(data){
+
     console.log("Search  Term: " + searchTerm);
     if (err) {
       console.error('Something went wrong', err.message);
@@ -99,24 +101,24 @@ function extractHelper(subset)
     }
     if(data != null && data.body != null && data.body.artist != null && data.body.artist.items != null && data.body.artist.items[0] != null)
     {
-      if(data != undefined && data.body != undefined && data.body.artist != undefined && data.body.artist.items != undefined && data.body.artist.items[0] != undefined)
-      {
         console.log("Found match, added to list");
         var artistID = data.body.artist.items[0].id;
         ArtistList.push(artistID);
-      }
     }
     else
      {
         localSet.pop();
         extractHelper(localSet);
       }
-  });
 
+    })
+    .catch(function(err) {
+      console.error(err);
+    });
      // spotify api pls dont blow up
     // end of spotify clientSecret
 
-  } // end of helper
+} // end of helper
 
 
 
