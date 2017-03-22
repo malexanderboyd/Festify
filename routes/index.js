@@ -13,7 +13,7 @@ var storage = multer.diskStorage({
 var upload = multer({ storage: storage })
 
 var gcs = require('../gc');
-
+var spotify = require('../spotify')
 
 
 
@@ -41,8 +41,16 @@ router.post('/test/submit', upload.single('fileUpload'), function(req, res, next
     // size
     var upload = req.file;
 
-    if(gcs.uploadImageToBucket(upload))
-      res.sendStatus(200);
+    gcs.uploadImageToBucket(upload)
+    .then(function(data) {
+      res.render('index', { title: 'Uploaded' });
+      res.statusCode = 200;
+    }, function(err)
+    {
+      console.log("ERRRORRRR");
+      console.error(err.message);
+    });
+
 
 });
 

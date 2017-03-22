@@ -21,40 +21,42 @@ module.exports = {
   gcs,
   uploadImageToBucket: function(upload)
   {
-
-    var bucket = gcs.bucket('festify')
-    bucket.upload(upload.path, function(err, file) {
-      if (!err) {
-        // "zebra.jpg" is now in your bucket.
-        console.log("File Uploaded! Now Retrieving Text");
-        retrieveText(upload);
-
-      }
-      else {
-        console.log(err);
-      }
+    return new Promise(function (fulfill, reject) {
+      var bucket = gcs.bucket('festify')
+      bucket.upload(upload.path, function(err, file) {
+        if (!err) {
+          // "zebra.jpg" is now in your bucket.
+          console.log("File Uploaded! Now Retrieving Text");
+          retrieveText(upload)
+          .then(function(data) {
+            fulfill(true);
+          }, function(err) {
+            console.error(err);
+            reject(err);
+          });
+        }
+        else {
+          reject(err);
+        }
+      });
     });
-
-  },
-
-
+  }
 }
 
 function retrieveText(upload)
 {
-  console.log("Retrieving Text");
-  visionClient.detectText(gcs.bucket('festify').file(upload.filename))
-  .then((results) => {
-    const detections = results[0];
+  return new Promise(function(fulfill, reject) {
+    console.log("Retrieving Text");
+    visionClient.detectText(gcs.bucket('festify').file(upload.filename))
+    .then((results) => {
+      const detections = results[0];
+      spotify.extractText(detections)
+      fulfill();
 
-    spotify.extractText(detections);
-    return true;
+    },function(reason) {
+      console.log(reason);
+      reject(reason);
+    });
 
-  //console.log('Text:');
-  //  detections.forEach((text) => console.log(text));
-
-  },function(reason) {
-    console.log(reason.errors.errors);
   });
-
 }
