@@ -1,4 +1,4 @@
-3/21/2017
+3/22/2017
 
 Festify, Spotify Playlist Generator from Music Festival Lineups!
 
@@ -7,11 +7,8 @@ WOP
 Using Google Cloud, Nodejs, and Express (Web application framework)
 
 Next Steps
-- Take uploaded local image -> store into google bucket
 
-- Take image in google bucket -> run through cloud text
-
--> take cloud text result -> return to server
+*** This branch is for the module: spotify-web-api, main branch may be re-written from this point on. ***
 
 -> server takes result list -> spotify API search
 
