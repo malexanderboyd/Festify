@@ -1,138 +1,110 @@
 var environment = require('node-env-file');
-try{
+try {
     environment('./private/spotify.env');
-}catch(e){
-  console.log("Couldn't find environment variables: " + e);
+} catch (e) {
+    console.log("Couldn't find environment variables: " + e);
 }
 
 const SpotifyWebAPI = require('spotify-web-api-node');
 var spotifyClient = new SpotifyWebAPI({
-  clientId : process.env.CLIENTID,
-  clientSecret : process.env.CLIENTSECRET,
-  redirectUri : 'http://localhost:3000/'
+    clientId: process.env.CLIENTID,
+    clientSecret: process.env.CLIENTSECRET,
+    redirectUri: 'http://localhost:3000/'
 });
 
 
-      var ArtistList = [];
-
+var ArtistList = [];
+var foundArtist = false;
 module.exports = {
-  spotifyClient,
-  ArtistList,
+    spotifyClient,
+    ArtistList,
 
-  extractText: function(results)
-  {
-      var localResults = [];
-      var workingResults = results;
+    findArtists: function (results) {
+        var localResults = [];
+        var workingResults = results;
 
-      console.log(workingResults);
-      for(var i = 1; i <= 10; i++)
-      {
-        console.log("ITERATION: " + i);
-        localResults.push(workingResults[i]);
-        if(workingResults[i+1] != null)
-          localResults.push(workingResults[i+1]);
-        if(workingResults[i+2] != null)
-          localResults.push(workingResults[i+2]);
-        if(workingResults[i+3] != null)
-          localResults.push(workingResults[i+3]);
+        return new Promise(function (fulfill, reject) {
 
-          extractHelper(localResults)
-          localResults = [];
-      }
+                if (!findArtistSearch(workingResults))
+                {
+                    console.error("Error: findArtistSearch CB: " + err);
+                    reject(err);
+                }
+                else
+                    fulfill(ArtistList); // we want to send back a list of valid arist
 
-
-      return true;
-
-
-  }
-
-
+        });
+    }
 };
 
-function split(subset)
-{
-  var localSet = [];
-  if(subset[0] != null) {
-  localSet.push(subset[0].toString());
 
-  }
-  if(subset[1] != null) {
-  localSet.push(subset[1].toString());
+function findArtistSearch(rs) {
 
-  }
-  if(subset[2] != null) {
-  localSet.push(subset[2].toString());
 
-  }
-  if(subset[3] != null) {
-  localSet.push(subset[3].toString());
+    if (rs == null)
+        return null;
 
-  }
+    var i = 1; // 0 index contains ALL text as a blob, start start at 1
+    while (i < rs.length) {
 
-  return localSet;
-}
-
-function extractHelper(subset)
-{
-
-  if(subset == null)
-    return null;
-
-  if(subset.length == 0)
-    return null;
-
-  console.log("Subset");
-  console.log(subset);
-
-  var localSet = [];
-  var counter = 0; // used to keep track of how many words we're going to remove later from main array.
-
-  localSet = split(subset);
-  counter = localSet.length;
+        var currentSubSet = split(rs, i); // creates subset of 4 words based on current index
+        findArtist(currentSubSet)
 
 
 
 
 
-    var searchTerm = localSet.toString();
-    searchTerm = searchTerm.replace(/,/g, " ");
-
-  sleep(1200);    // spotify api pls dont blow up
-
-  // Search artists whose name contains current searchTerm
-  spotifyClient.searchArtists(searchTerm, { limit: 1 })
-  .then(function(data){
-
-    console.log("Search  Term: " + searchTerm);
-    console.log(data);
-    if(data != null && data.body != null && data.body.artist != null && data.body.artist.items != null && data.body.artist.items[0] != null)
-    {
-        console.log("Found match, added to list");
-        var artistID = data.body.artist.items[0].id;
-        ArtistList.push(artistID);
     }
-    else
-     {
-        localSet.pop();
-        extractHelper(localSet);
-      }
-
-    })
-    .catch(function(err) {
-      console.error(err);
-    });
 
 
 
-} // end of helper
-
-
-
-function sleep(milliseconds) {
-  var start = new Date().getTime();
-  for (var i = 0; i < 1e7; i++) {
-    if ((new Date().getTime() - start) > milliseconds){
-      break;
+    return true; // return true when ArtistList is full of valid artist
     }
-  }
+
+
+    function findArtist(currentSubSet) {
+
+        return new Promise(function (fulfill, reject) {
+              var searchTerm = currentSubSet.toString();
+              searchTerm = searchTerm.replace(/,/g, " ");
+              spotifyClient.searchArtists(searchTerm, { limit: 1 })
+              .then(function(data))
+              {
+
+              }
+              .catch(function(ex))
+              {
+
+              }
+        });
+
+    }
+
+
+    /* Helper function to easily divide up subsets */
+    function split(rs, i) {
+        var curr = [];
+        if (rs[i] != null)
+            curr.push(rs[i]);
+        if (rs[i + 1] != null)
+            curr.push(rs[i + 1]);
+        if (rs[i + 2] != null)
+            curr.push(rs[i + 2]);
+        if (rs[i + 3] != null)
+            curr.push(rs[i + 3]);
+
+        return curr;
+    }
+
+
+
+/* Spotfi API prevents rapid API calls, so must limit the rate somehow... */
+function sleep(milliseconds)
+{
+    var start = new Date().getTime();
+    for (var i = 0; i < 1e7; i++) {
+        if ((new Date().getTime() - start) > milliseconds) {
+            break;
+        }
+    }
 }

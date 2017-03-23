@@ -19,17 +19,17 @@ const visionClient = Vision({
 
 module.exports = {
   gcs,
-  uploadImageToBucket: function(upload)
+  retrieveText: function(upload)
   {
     return new Promise(function (fulfill, reject) {
       var bucket = gcs.bucket('festify')
       bucket.upload(upload.path, function(err, file) {
-        if (!err) {
-          // "zebra.jpg" is now in your bucket.
-          console.log("File Uploaded! Now Retrieving Text");
+          if (!err) {
+              console.log("Step 1: File " + upload.filename + " uploaded to bucket.");
           retrieveText(upload)
-          .then(function(data) {
-            fulfill(true);
+              .then(function (data) {
+                  console.log("Step 2: Text Extract - Complete");
+            fulfill(data);
           }, function(err) {
             console.error(err);
             reject(err);
@@ -46,13 +46,10 @@ module.exports = {
 function retrieveText(upload)
 {
   return new Promise(function(fulfill, reject) {
-    console.log("Retrieving Text");
     visionClient.detectText(gcs.bucket('festify').file(upload.filename))
     .then((results) => {
       const detections = results[0];
-      spotify.extractText(detections)
-      fulfill();
-
+      fulfill(detections);
     },function(reason) {
       console.log(reason);
       reject(reason);

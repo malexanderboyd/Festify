@@ -28,7 +28,7 @@ router.get('/test/:id', function(req, res, next)
 });
 
 
-router.post('/test/submit', upload.single('fileUpload'), function(req, res, next) {
+router.post('/test/submit', upload.single('fileUpload'), function (req, res, next) {
 
     //console.log(req.file);
     // fieldname:
@@ -41,16 +41,30 @@ router.post('/test/submit', upload.single('fileUpload'), function(req, res, next
     // size
     var upload = req.file;
 
-    gcs.uploadImageToBucket(upload)
-    .then(function(data) {
-      res.render('index', { title: 'Uploaded' });
-      res.statusCode = 200;
-    }, function(err)
-    {
-      console.log("ERRRORRRR");
-      console.error(err.message);
-    });
-
+    try {
+        gcs.retrieveText(upload) // upload to Google Cloud, and extract text using Google Vision
+            .then(function (data) { // Use extracted text
+                console.log("Step 4: Find Valid Arist - Start");
+                console.log("Current Data: \n");
+                console.log(data);
+                console.log("\n");
+                spotify.findArtists(data) // Find valid artist within extracted text
+                    .then(function (data) { //  generate playlist using returned valid artist
+                        //spotify.generatePlayList(data);
+                        res.render('index', { title: 'Uploaded' });
+                        res.statusCode = 200;
+                        console.log(data);
+                    }).catch(function (err) {
+                        console.error(err);
+                    });
+                    
+            }).catch(function (err) {
+                console.error(err);
+            });
+    }
+    catch (ex) {
+        console.error(ex);
+    }
 
 });
 
