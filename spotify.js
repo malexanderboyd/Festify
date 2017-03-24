@@ -13,8 +13,7 @@ var spotifyClient = new SpotifyWebAPI({
 });
 
 
-var ArtistList = [];
-var foundArtist = false;
+
 module.exports = {
     spotifyClient,
     ArtistList,
@@ -27,8 +26,8 @@ module.exports = {
 
                 if (!findArtistSearch(workingResults))
                 {
-                    console.error("Error: findArtistSearch CB: " + err);
-                    reject(err);
+                    console.error("Error: findArtistSearch CB");
+                    reject();
                 }
                 else
                     fulfill(ArtistList); // we want to send back a list of valid arist
@@ -38,47 +37,72 @@ module.exports = {
 };
 
 
-function findArtistSearch(rs) {
+var promiseList = [];
+var ArtistList = [];
+var foundArtist = false;
+var i = 1;
+
+function findArtist(currentSubSet)
+{
+    return new Promise(resolve => {
+        if (currentSubSet == null)
+            return;
+
+        var searchTerm = currentSubSet.toString();
+        searchTerm = searchTerm.replace(/,/g, " ");
+        resolve(spotifyClient.searchArtists(searchTerm, { limit: 1 })
+            .then(function (data) {
+                handleSearchResults(data, currentSubSet);
+            }));
+
+    });
+}
+
+async function findArtistSearch(rs) {
 
 
     if (rs == null)
         return null;
+    var lastI = 0;
+        while (i < 50)
+           {
+            var currentSubSet = split(rs, i); // creates subset of 4 words based on current indxen
+            console.log("Searching for: " + currentSubSet.toString());
+            var curr = await findArtist(currentSubSet);
+            console.log(curr);
+            sleep(1500);
+        }
 
-    var i = 1; // 0 index contains ALL text as a blob, start start at 1
-    while (i < rs.length) {
-
-        var currentSubSet = split(rs, i); // creates subset of 4 words based on current index
-        findArtist(currentSubSet)
+}
 
 
 
 
+function handleSearchResults(data, currentSubSet) {
+    i++;
+    if (data.body.artists != null) {
+        console.log("HandleSearch Results for Search: " + currentSubSet.toString())
+        console.log(data.body.artists.items);
+    }
+    else {
+        currentSubSet.pop();
+        findArtist(currentSubSet);
+    }
+        
+}
 
+
+
+    function processResponse(err, data) {
+        if (err) {
+            console.log("Something went wrong, processResponse() : " + err)
+        } else {
+            console.log("Process Response Callback");
+            console.log(data.body.artists);
+            i++;
+        }
     }
 
-
-
-    return true; // return true when ArtistList is full of valid artist
-    }
-
-
-    function findArtist(currentSubSet) {
-
-        return new Promise(function (fulfill, reject) {
-              var searchTerm = currentSubSet.toString();
-              searchTerm = searchTerm.replace(/,/g, " ");
-              spotifyClient.searchArtists(searchTerm, { limit: 1 })
-              .then(function(data))
-              {
-
-              }
-              .catch(function(ex))
-              {
-
-              }
-        });
-
-    }
 
 
     /* Helper function to easily divide up subsets */
