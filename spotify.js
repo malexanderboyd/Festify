@@ -37,7 +37,7 @@ module.exports = {
 };
 
 
-var promiseList = [];
+var NamedArtistList = [];
 var ArtistList = [];
 var foundArtist = false;
 var i = 1;
@@ -46,15 +46,24 @@ function findArtist(currentSubSet)
 {
     return new Promise(resolve => {
         if (currentSubSet == null)
-            return;
+                return;
 
         var searchTerm = currentSubSet.toString();
-        searchTerm = searchTerm.replace(/,/g, " ");
-        resolve(spotifyClient.searchArtists(searchTerm, { limit: 1 })
-            .then(function (data) {
-                handleSearchResults(data, currentSubSet);
-            }));
-
+        if (NamedArtistList.indexOf(searchTerm) == -1) {
+            searchTerm = searchTerm.replace(/[^\w\s]/gi, '');
+            searchTerm = searchTerm.replace("\0\g", "O");
+            console.log("Searching for: " + searchTerm);
+                resolve(spotifyClient.searchArtists(searchTerm, { limit: 1 })
+                    .then(function (data) {
+                        handleSearchResults(data, currentSubSet);
+                    }, function (err) {
+                        console.log("FindArtist Error" + searchTerm);
+                        console.error(err);
+                    }));
+        }
+        else {
+            // already searched, redundant
+        }
     });
 }
 
@@ -63,26 +72,42 @@ async function findArtistSearch(rs) {
 
     if (rs == null)
         return null;
-    var lastI = 0;
-        while (i < 50)
+
+    while (i < rs.length)
            {
             var currentSubSet = split(rs, i); // creates subset of 4 words based on current indxen
-            console.log("Searching for: " + currentSubSet.toString());
             var curr = await findArtist(currentSubSet);
-            console.log(curr);
-            sleep(1500);
+            console.log("Current findArtistSearch");
+            if (curr != undefined) {
+                console.log("found result");
+                console.log(curr);
+            }
+            else {
+               // console.log(curr);
+            }
+            sleep(1600);
         }
 
+    console.log("Done Finding Valid Artists: Current List \n");
+    console.log(ArtistList.join("\n"));
+    return true;
 }
 
 
 
 
 function handleSearchResults(data, currentSubSet) {
-    i++;
-    if (data.body.artists != null) {
+    
+    if (data.body.artists.total > 0) {
+        var artistID = data.body.artists.items[0].id;
+        if (ArtistList.indexOf(artistID) == -1) {
         console.log("HandleSearch Results for Search: " + currentSubSet.toString())
-        console.log(data.body.artists.items);
+        // debug console.log(data.body.artists.items);
+        // console.log(data.body.artists.items[0].id);
+            ArtistList.push(artistID);
+        }
+        i += currentSubSet.length;
+        NamedArtistList.push(currentSubSet.toString().replace(/[^\w\s]/gi, ''));     
     }
     else {
         currentSubSet.pop();

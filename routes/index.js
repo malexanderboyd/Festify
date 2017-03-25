@@ -53,6 +53,7 @@ router.post('/test/submit', upload.single('fileUpload'), function (req, res, nex
                         //spotify.generatePlayList(data);
                         res.render('index', { title: 'Uploaded' });
                         res.statusCode = 200;
+                        console.log("Found dis artist list");
                         console.log(data);
                     }).catch(function (err) {
                         console.error(err);
