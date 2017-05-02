@@ -71,7 +71,9 @@ async function runArtistSearch(rs) {
                 else {
                     console.log("Undefined or Null Results.");
                 }
-                    });
+                }).catch(function (err) {
+                    console.error(err);
+                });
             sleep(1600); // Spotify Rate Limiting, yay!
      }
 
@@ -86,14 +88,20 @@ async function runArtistSearch(rs) {
             return null;
 
          let searchData = searchTerm.toString();
-         searchData = searchData.replace(/[^\w\s]/gi, '');
-         searchData = searchData.replace("\0\g", "O");
+         let zeroRE = "/0/g";
+         let commaRE = "/,/gi";
+         searchData = searchData.replace(/0/g, 'O');
+         searchData = searchData.replace(/,/g, ' ');
          console.log("Current Search Term: " + searchData);
+        
          let resultData;
          try {
-             resultData = await spotifyClient.searchArtists(searchData, { limit: 1 })
-             console.log("Result Data");
-             console.log(resultData);
+             if (searchData != "") {
+                 resultData = await spotifyClient.searchArtists(searchData, { limit: 1 })
+             } else {
+                 resultData = null;
+             }
+             //console.log(resultData);
              resultData = await handleSearchResults(resultData, searchTerm)
              return resultData;
 
@@ -124,7 +132,7 @@ function handleSearchResults(data, currentSubSet) {
     return new Promise(resolve => {
 
 
-        if (data.body.artists.total > 0) {
+        if (data != null && data.body.artists.total > 0) {
             // spotify uses the artist Id to pull songs, we'll need this later.
             var artistID = data.body.artists.items[0].id;
             if (ArtistList.get(artistID) == -1) {
@@ -154,6 +162,8 @@ function handleSearchResults(data, currentSubSet) {
             resolve(null);
         }
 
+    }).catch(function (err) {
+        console.error(err);
     });
         
 }
