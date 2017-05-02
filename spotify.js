@@ -1,4 +1,8 @@
 var environment = require('node-env-file');
+
+var HashMap = require('hashmap');
+
+
 try {
     environment('./private/spotify.env');
 } catch (e) {
@@ -17,102 +21,140 @@ var spotifyClient = new SpotifyWebAPI({
 module.exports = {
     spotifyClient,
     ArtistList,
-
-    findArtists: function (results) {
-        var localResults = [];
-        var workingResults = results;
-
-        return new Promise(function (fulfill, reject) {
-
-                if (!findArtistSearch(workingResults))
-                {
-                    console.error("Error: findArtistSearch CB");
-                    reject();
-                }
-                else
-                    fulfill(ArtistList); // we want to send back a list of valid arist
-
-        });
-    }
+    findArtists
 };
 
 
-var NamedArtistList = [];
-var ArtistList = [];
-var foundArtist = false;
-var i = 1;
+var ArtistList = new HashMap();
+var foundArtist = true;
+var processedList = false;
+var i = 1
 
-function findArtist(currentSubSet)
+let originalData;
+
+ function findArtists(dataSet)
 {
     return new Promise(resolve => {
-        if (currentSubSet == null)
+        if (dataSet == null)
                 return;
-
-        var searchTerm = currentSubSet.toString();
-        if (NamedArtistList.indexOf(searchTerm) == -1) {
-            searchTerm = searchTerm.replace(/[^\w\s]/gi, '');
-            searchTerm = searchTerm.replace("\0\g", "O");
-            console.log("Searching for: " + searchTerm);
-                resolve(spotifyClient.searchArtists(searchTerm, { limit: 1 })
-                    .then(function (data) {
-                        handleSearchResults(data, currentSubSet);
-                    }, function (err) {
-                        console.log("FindArtist Error" + searchTerm);
-                        console.error(err);
-                    }));
-        }
-        else {
-            // already searched, redundant
-        }
+        runArtistSearch(dataSet)
+        .then((result) => {
+            if(result != null)
+            {
+                resolve(ArtistList); // artist list should be full of valid artist now.
+            }
+        });
     });
 }
 
-async function findArtistSearch(rs) {
-
+async function runArtistSearch(rs) {
 
     if (rs == null)
         return null;
 
-    while (i < rs.length)
-           {
-            var currentSubSet = split(rs, i); // creates subset of 4 words based on current indxen
-            var curr = await findArtist(currentSubSet);
-            console.log("Current findArtistSearch");
-            if (curr != undefined) {
-                console.log("found result");
-                console.log(curr);
-            }
-            else {
-               // console.log(curr);
-            }
-            sleep(1600);
+
+    originalData = rs;
+    while (!processedList)
+    {
+        if (foundArtist == true) {
+            var currentSubSet = split(rs, i); // creates subset of 4 words based on current index
+            foundArtist = false;
         }
+            await findArtist(currentSubSet)
+            .then((result) => {
+                if (result != null && result != undefined)
+                {
+                    
+                    console.log("Current findArtistSearch");
+                    console.log(result);
+                }
+                else {
+                    console.log("Undefined or Null Results.");
+                }
+                    });
+            sleep(1600); // Spotify Rate Limiting, yay!
+     }
 
     console.log("Done Finding Valid Artists: Current List \n");
     console.log(ArtistList.join("\n"));
     return true;
 }
 
+ async function findArtist(searchTerm)
+ {
+     if (searchTerm == null)
+            return null;
+
+         let searchData = searchTerm.toString();
+         searchData = searchData.replace(/[^\w\s]/gi, '');
+         searchData = searchData.replace("\0\g", "O");
+         console.log("Current Search Term: " + searchData);
+         let resultData;
+         try {
+             resultData = await spotifyClient.searchArtists(searchData, { limit: 1 })
+             console.log("Result Data");
+             console.log(resultData);
+             resultData = await handleSearchResults(resultData, searchTerm)
+             return resultData;
+
+         } catch (ex) {
+             console.error(ex);
+         }
+
+           /*  .then((result) => {
+                 if (result != null && result != undefined) {
+                     handleSearchResults(result, subset);
+                     console.log(result);
+                     resultData = result;
+                     resolve(resultData);
+                 }
+                 else {
+                     handleSearchResults(result, subset);
+                 }
+             });*/
+
+ }
+
+
 
 
 
 function handleSearchResults(data, currentSubSet) {
-    
-    if (data.body.artists.total > 0) {
-        var artistID = data.body.artists.items[0].id;
-        if (ArtistList.indexOf(artistID) == -1) {
-        console.log("HandleSearch Results for Search: " + currentSubSet.toString())
-        // debug console.log(data.body.artists.items);
-        // console.log(data.body.artists.items[0].id);
-            ArtistList.push(artistID);
+
+    return new Promise(resolve => {
+
+
+        if (data.body.artists.total > 0) {
+            // spotify uses the artist Id to pull songs, we'll need this later.
+            var artistID = data.body.artists.items[0].id;
+            if (ArtistList.get(artistID) == -1) {
+                console.log("HandleSearch Results for Search: " + currentSubSet.toString())
+            }
+            // Check if we're at the end of our list
+            if (i + currentSubSet.length >= originalData.length) {
+                processedList = true;
+            }
+            else {
+                i += currentSubSet.length;
+            }
+
+            // add found Artist Name so we can use it for displaying later
+            let artistName = currentSubSet.toString().replace(/[^\w\s]/gi, '');
+
+            // HashMap so we can easily access names
+            ArtistList.set(artistID, artistName);
+            foundArtist = true;
+            resolve(artistName);
         }
-        i += currentSubSet.length;
-        NamedArtistList.push(currentSubSet.toString().replace(/[^\w\s]/gi, ''));     
-    }
-    else {
-        currentSubSet.pop();
-        findArtist(currentSubSet);
-    }
+        else {
+            currentSubSet.pop();
+            if (currentSubSet.length == 0) {
+                i += 4; // no valid artist in subgroup, goto next one.
+            }
+            resolve(null);
+        }
+
+    });
         
 }
 

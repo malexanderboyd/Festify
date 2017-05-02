@@ -40,15 +40,16 @@ router.post('/test/submit', upload.single('fileUpload'), function (req, res, nex
     // path
     // size
     var upload = req.file;
-
+    var textData;
     try {
         gcs.retrieveText(upload) // upload to Google Cloud, and extract text using Google Vision
             .then(function (data) { // Use extracted text
                 console.log("Step 4: Find Valid Arist - Start");
                 console.log("Current Data: \n");
                 console.log(data);
-                console.log("\n");
-                spotify.findArtists(data) // Find valid artist within extracted text
+                textData = data;
+
+                spotify.findArtists(textData) // Find valid artist within extracted text
                     .then(function (data) { //  generate playlist using returned valid artist
                         //spotify.generatePlayList(data);
                         res.render('index', { title: 'Uploaded' });
@@ -58,7 +59,9 @@ router.post('/test/submit', upload.single('fileUpload'), function (req, res, nex
                     }).catch(function (err) {
                         console.error(err);
                     });
-                    
+
+
+                console.log("\n");              
             }).catch(function (err) {
                 console.error(err);
             });
