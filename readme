@@ -1,4 +1,21 @@
-3/21/2017
+
+# 5/4/2017
+
+Festify, is a spotify playlist generator using Music Festival Lineup pictures!
+
+Using Google Vision API, Nodejs, and Express
+
+Next Steps
+
+-> Require Users to login to authenticate before uploading image
+
+-> Generating Playlist after authenticate
+
+-> Decorate, UI , etc.
+
+
+
+3/22/2017
 
 Festify, Spotify Playlist Generator from Music Festival Lineups!
 
