@@ -14,8 +14,8 @@ var upload = multer({ storage: storage })
 
 var gcs = require('../gc');
 var spotify = require('../spotify')
-
-
+var HashMap = require('hashmap');
+var ArtistList = new HashMap();
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
@@ -44,18 +44,33 @@ router.post('/test/submit', upload.single('fileUpload'), function (req, res, nex
     try {
         gcs.retrieveText(upload) // upload to Google Cloud, and extract text using Google Vision
             .then(function (data) { // Use extracted text
-                console.log("Step 4: Find Valid Arist - Start");
+                console.log("Step 4: Find Valid Artist - Start");
                 console.log("Current Data: \n");
                 console.log(data);
                 textData = data;
 
                 spotify.findArtists(textData) // Find valid artist within extracted text
-                    .then(function (data) { //  generate playlist using returned valid artist
-                        //spotify.generatePlayList(data);
-                        res.render('index', { title: 'Uploaded' });
-                        res.statusCode = 200;
-                        console.log("Found dis artist list");
-                        console.log(data);
+                    .then(function (data) { 
+                        if (data != null)
+                        {
+                            console.log("Step 5: Found Valid Artist - End\n Step 6: Find Artist Top Tracks");
+                            ArtistList = data;
+                            spotify.generateSongList(ArtistList) //  generate playlist using returned valid artist
+                                .then(function (data) {
+                                    if (data != null) {
+                                        spotify.generatePlayList(data)
+                                        .then(function (data) {
+                                        }).catch(function (err) {
+                                            console.log(err);
+                                        });
+                                    }
+                                 
+                                }).catch(function (err) {
+                                    console.error(err);
+                                });
+                            //res.render('index', { title: 'Uploaded' });
+                            //res.statusCode = 200;
+                          }
                     }).catch(function (err) {
                         console.error(err);
                     });

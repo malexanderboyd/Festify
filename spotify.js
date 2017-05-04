@@ -21,31 +21,170 @@ var spotifyClient = new SpotifyWebAPI({
 module.exports = {
     spotifyClient,
     ArtistList,
-    findArtists
+    findArtists,
+    generateSongList,
+    generatePlayList
 };
 
 
 var ArtistList = new HashMap();
+var songsList = [];
+var artistIDs = [];
 var foundArtist = true;
 var processedList = false;
-var i = 1
-
+var processedSongs = false;
+var builtPlaylist = false;
+var createdPlayList = false;
+var i = 1;
+var j = 0;
 let originalData;
 
- function findArtists(dataSet)
-{
+function findArtists(dataSet) {
     return new Promise(resolve => {
         if (dataSet == null)
-                return;
+            return;
         runArtistSearch(dataSet)
-        .then((result) => {
-            if(result != null)
-            {
-                resolve(ArtistList); // artist list should be full of valid artist now.
-            }
-        });
+            .then((result) => {
+                if (result != null) {
+                    resolve(ArtistList); // artist list should be full of valid artist now.
+                }
+            });
     });
 }
+
+
+
+function generateSongList(artists) {
+
+
+    return new Promise(resolve => {
+        if (artists == null)
+            return;
+
+        artists.forEach(function (value, key) {
+            console.log("Key: " + key + "\nValue: " + value);
+            artistIDs.push(key);
+        });
+
+
+        findTopTracks(artistIDs)
+            .then((result) => {
+                if (result != null) {
+                    resolve(songsList);
+                }
+            }).catch(error => {
+                console.error(error);
+            });
+    });
+}
+
+
+function generatePlayList(songs)
+{
+    return new Promise(resolve => {
+        if (songs == null)
+            return;
+
+
+        buildPlayList(songs)
+            .then((result) => {
+                if (result != null) {
+                    resolve(songsList);
+                }
+            }).catch(error => {
+                console.error(error);
+            });
+    });
+
+}
+
+async function buildPlayList(songs) {
+    try {
+        let results;
+        let playlistID;
+        while (!createdPlayList) {
+            results = await spotifyClient.createPlaylist('goboydorgohome', 'Festify Playlist', { 'public': false }) 
+            console.log("Playlist creation");
+            console.log(results);
+            createdPlayList = true;
+        }
+
+        while (!builtPlaylist) {
+
+
+        }
+
+
+        return true;
+
+    }
+    catch (Ex) {
+        console.error(Ex);
+    }
+
+
+
+}
+
+
+
+async function findTopTracks(artists) {
+
+      try {
+        let results;
+        let artistID;
+        while (!processedSongs) {
+            sleep(1000); // yay spotify limiting!
+            artistID = artistIDs[j];
+            results = await spotifyClient.getArtistTopTracks(artistID, 'US')
+            if (results != null) {
+                console.log("song search results");
+                console.log(results);
+                if (results.body != null && results.body.tracks != null && results.body.tracks.length >= 3) {
+                    if (results.body.tracks[0] != null) {
+                        var song = results.body.tracks[0].id;
+                        songsList.push('spotify:track:' + song);
+                    }
+                    if (results.body.tracks[1] != null) {
+                        var song = results.body.tracks[1].id;
+                        songsList.push('spotify:track:' + song);
+                    }
+                    if (results.body.tracks[2] != null) {
+                        var song = results.body.tracks[2].id;
+                        songsList.push('spotify:track:' + song);
+                    }
+                }
+                if (j + 1 > artistIDs.length) {
+                    processedSongs = true;
+                } else {
+                    j++;
+                }
+            } else {
+                if (j + 1 > artistIDs.length) {
+                    processedSongs = true;
+                } else {
+                    j++;
+                }
+            }
+        }
+    }
+    catch (e) {
+        console.error(e);
+    }
+    return true;
+    // // get top 3 tracks from each artists
+
+}
+
+
+function findTop(key) {
+    return ;
+}
+
+
+
+
+
 
 async function runArtistSearch(rs) {
 
@@ -54,74 +193,73 @@ async function runArtistSearch(rs) {
 
 
     originalData = rs;
-    while (!processedList)
-    {
+    while (!processedList) {
         if (foundArtist == true) {
             var currentSubSet = split(rs, i); // creates subset of 4 words based on current index
             foundArtist = false;
         }
-            await findArtist(currentSubSet)
+        await findArtist(currentSubSet)
             .then((result) => {
-                if (result != null && result != undefined)
-                {
-                    
+                if (result != null && result != undefined) {
+
                     console.log("Current findArtistSearch");
                     console.log(result);
                 }
                 else {
                     console.log("Undefined or Null Results.");
                 }
-                }).catch(function (err) {
-                    console.error(err);
-                });
-            sleep(1600); // Spotify Rate Limiting, yay!
-     }
-
-    console.log("Done Finding Valid Artists: Current List \n");
-    console.log(ArtistList.join("\n"));
+            }).catch(function (err) {
+                console.error(err);
+            });
+        sleep(1600); // Spotify Rate Limiting, yay!
+    }
+    //console.log("Done Finding Valid Artists: Current List \n");
+    /*ArtistList.forEach(function (value, key) {
+        console.log("Key: " + key + "\nValue: " + value);
+    });*/
     return true;
 }
 
- async function findArtist(searchTerm)
- {
-     if (searchTerm == null)
-            return null;
+async function findArtist(searchTerm) {
+    if (searchTerm == null)
+        return null;
 
-         let searchData = searchTerm.toString();
-         let zeroRE = "/0/g";
-         let commaRE = "/,/gi";
-         searchData = searchData.replace(/0/g, 'O');
-         searchData = searchData.replace(/,/g, ' ');
-         console.log("Current Search Term: " + searchData);
-        
-         let resultData;
-         try {
-             if (searchData != "") {
-                 resultData = await spotifyClient.searchArtists(searchData, { limit: 1 })
-             } else {
-                 resultData = null;
-             }
-             //console.log(resultData);
-             resultData = await handleSearchResults(resultData, searchTerm)
-             return resultData;
+    let searchData = searchTerm.toString();
+    let zeroRE = "/0/g";
+    let commaRE = "/,/gi";
+    searchData = searchData.replace(/0/g, 'O');
+    searchData = searchData.replace(/,/g, ' ');
+    searchData = searchData.trim();
+    console.log("Current Search Term: " + searchData);
+    let resultData;
+    try {
+        if (searchData != "") {
+            console.log("sending this to spotify: " + searchData);
+            resultData = await spotifyClient.searchArtists(searchData, { limit: 1 })
+        } else {
+            return resultData = null;
+        }
+        //console.log(resultData);
+        resultData = await handleSearchResults(resultData, searchTerm)
+        return resultData;
 
-         } catch (ex) {
-             console.error(ex);
-         }
+    } catch (ex) {
+        console.error(ex);
+    }
 
-           /*  .then((result) => {
-                 if (result != null && result != undefined) {
-                     handleSearchResults(result, subset);
-                     console.log(result);
-                     resultData = result;
-                     resolve(resultData);
-                 }
-                 else {
-                     handleSearchResults(result, subset);
-                 }
-             });*/
+    /*  .then((result) => {
+          if (result != null && result != undefined) {
+              handleSearchResults(result, subset);
+              console.log(result);
+              resultData = result;
+              resolve(resultData);
+          }
+          else {
+              handleSearchResults(result, subset);
+          }
+      });*/
 
- }
+}
 
 
 
@@ -157,7 +295,13 @@ function handleSearchResults(data, currentSubSet) {
         else {
             currentSubSet.pop();
             if (currentSubSet.length == 0) {
-                i += 4; // no valid artist in subgroup, goto next one.
+                console.log("Skipping current subSet");
+                if (i + 1 >= originalData.length) {
+                    processedList = true;
+                } else {
+                    i += 1; // no valid artist in subgroup, goto next one.
+                }
+                foundArtist = true; // so we can keep moving on list
             }
             resolve(null);
         }
@@ -165,43 +309,42 @@ function handleSearchResults(data, currentSubSet) {
     }).catch(function (err) {
         console.error(err);
     });
-        
+
 }
 
 
 
-    function processResponse(err, data) {
-        if (err) {
-            console.log("Something went wrong, processResponse() : " + err)
-        } else {
-            console.log("Process Response Callback");
-            console.log(data.body.artists);
-            i++;
-        }
+function processResponse(err, data) {
+    if (err) {
+        console.log("Something went wrong, processResponse() : " + err)
+    } else {
+        console.log("Process Response Callback");
+        console.log(data.body.artists);
+        i++;
     }
+}
 
 
 
-    /* Helper function to easily divide up subsets */
-    function split(rs, i) {
-        var curr = [];
-        if (rs[i] != null)
-            curr.push(rs[i]);
-        if (rs[i + 1] != null)
-            curr.push(rs[i + 1]);
-        if (rs[i + 2] != null)
-            curr.push(rs[i + 2]);
-        if (rs[i + 3] != null)
-            curr.push(rs[i + 3]);
+/* Helper function to easily divide up subsets */
+function split(rs, i) {
+    var curr = [];
+    if (rs[i] != null)
+        curr.push(rs[i]);
+    if (rs[i + 1] != null)
+        curr.push(rs[i + 1]);
+    if (rs[i + 2] != null)
+        curr.push(rs[i + 2]);
+    if (rs[i + 3] != null)
+        curr.push(rs[i + 3]);
 
-        return curr;
-    }
+    return curr;
+}
 
 
 
 /* Spotfi API prevents rapid API calls, so must limit the rate somehow... */
-function sleep(milliseconds)
-{
+function sleep(milliseconds) {
     var start = new Date().getTime();
     for (var i = 0; i < 1e7; i++) {
         if ((new Date().getTime() - start) > milliseconds) {
