@@ -353,6 +353,9 @@ async function findArtist(searchTerm) {
     let commaRE = "/,/gi";
     searchData = searchData.replace(/0/g, 'O');
     searchData = searchData.replace(/,/g, ' ');
+    searchData = searchData.replace(/and/g, '');
+    searchData = searchData.replace(/AND/g, '');
+    searchData = searchData.replace(/./g, '');
     searchData = searchData.trim();
     console.log("Current Search Term: " + searchData);
     let resultData;
