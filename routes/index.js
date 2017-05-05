@@ -14,6 +14,8 @@ var upload = multer({ storage: storage })
 
 var gcs = require('../gc');
 var spotify = require('../spotify')
+var stateKey = 'spotify_auth_state';
+
 var HashMap = require('hashmap');
 var ArtistList = new HashMap();
 
@@ -21,6 +23,42 @@ var ArtistList = new HashMap();
 router.get('/', function(req, res, next) {
   res.render('index', { title: 'Express' });
 });
+
+
+router.get('/login', function (req, res) {
+
+
+    var url = spotify.getAuthURL();
+    res.redirect(url);
+});
+
+
+router.get('/callback', function (req, res) {
+    var code = req.query.code || null;
+    var state = req.query.state || null;
+    var storedState = req.cookies ? req.cookies[stateKey] : null;
+
+    if (code == null) {
+        console.log("Problem authenticating user, try again?");
+    }
+    else {
+        spotify.authorizeUser(code)
+            .then(function (data) {
+                if (data != null) {
+                    spotify.getUserInfo()
+                        .then(function (data) {
+                            console.log(data);
+                        }).catch(function (err) {
+                            console.log(err);
+                        });
+                }
+            }).catch(function (error) {
+                console.error(error);
+            });
+    }
+});
+
+
 
 router.get('/test/:id', function(req, res, next)
 {
@@ -59,7 +97,8 @@ router.post('/test/submit', upload.single('fileUpload'), function (req, res, nex
                                 .then(function (data) {
                                     if (data != null) {
                                         spotify.generatePlayList(data)
-                                        .then(function (data) {
+                                            .then(function (data) {
+                                                console.log(data);
                                         }).catch(function (err) {
                                             console.log(err);
                                         });

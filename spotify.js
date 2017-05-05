@@ -13,9 +13,37 @@ const SpotifyWebAPI = require('spotify-web-api-node');
 var spotifyClient = new SpotifyWebAPI({
     clientId: process.env.CLIENTID,
     clientSecret: process.env.CLIENTSECRET,
-    redirectUri: 'http://localhost:3000/'
+    redirectUri: 'http://localhost:3000/callback'
 });
 
+
+var scopes = ['playlist-modify-public'];
+var state = 'spotify_auth_state';
+
+var authorizeURL = spotifyClient.createAuthorizeURL(scopes, state);
+
+function getAuthURL() {
+    return authorizeURL;
+}
+
+function authorizeUser(code) {
+
+    return new Promise(resolve => {
+        spotifyClient.authorizationCodeGrant(code)
+            .then(function (data) {
+                console.log('The token expires in ' + data.body['expires_in']);
+                console.log('The access token is ' + data.body['access_token']);
+                console.log('The refresh token is ' + data.body['refresh_token']);
+
+                // Set the access token on the API object to use it in later calls
+                spotifyClient.setAccessToken(data.body['access_token']);
+                spotifyClient.setRefreshToken(data.body['refresh_token']);
+                resolve(true);
+            }).catch(function (err) {
+                console.log(err);
+            });
+    });
+}
 
 
 module.exports = {
@@ -23,10 +51,16 @@ module.exports = {
     ArtistList,
     findArtists,
     generateSongList,
-    generatePlayList
+    generatePlayList,
+    getAuthURL,
+    authorizeUser,
+    getUserInfo
 };
 
 
+
+var playlistID = "";
+var clientUsername = "";
 var ArtistList = new HashMap();
 var songsList = [];
 var artistIDs = [];
@@ -38,6 +72,30 @@ var createdPlayList = false;
 var i = 1;
 var j = 0;
 let originalData;
+
+
+
+function getUserInfo() {
+
+    return new Promise(resolve => {
+        spotifyClient.getMe()
+            .then(function (data) {
+                if (data != null) {
+                    try {
+                        clientUsername = data.body.id; // grab user id to create playlist later
+                    }
+                    catch (ex) {
+                        console.error(ex);
+                    }
+                    resolve(data);
+                }
+            }).catch(function (err) {
+                console.log(err);
+            });
+    })
+
+}
+
 
 function findArtists(dataSet) {
     return new Promise(resolve => {
@@ -102,16 +160,40 @@ async function buildPlayList(songs) {
     try {
         let results;
         let playlistID;
+       
         while (!createdPlayList) {
-            results = await spotifyClient.createPlaylist('goboydorgohome', 'Festify Playlist', { 'public': false }) 
-            console.log("Playlist creation");
-            console.log(results);
-            createdPlayList = true;
+            results = await spotifyClient.createPlaylist(clientUsername, 'Festify Playlist', { 'public': true }) 
+            console.log("Playlist creation Complete");
+            if (results != null) {
+                try {
+                    playlistID = results.body.id;
+                    createdPlayList = true;
+                }
+                catch (Ex) {
+                    console.log("create playlist");
+                    console.error(Ex);
+                }
+
+            }
         }
 
-        while (!builtPlaylist) {
 
-
+        while (!builtPlaylist && createdPlayList) {
+            try {
+                console.log("User: " + clientUsername);
+                console.log("Playlist id: " + playlistID);
+                results = await spotifyClient.addTracksToPlaylist(clientUsername, playlistID, songsList.slice(0, (songsList.length/4)))
+                    .then(function (data) {
+                        console.log('Added tracks to playlist!');
+                        buildPlayList = true;
+                    }, function (err) {
+                        console.log('Something went wrong!', err);
+                    });
+            }
+            catch (ex) {
+                console.log("Build playlist");
+                console.error(ex);
+            }
         }
 
 
@@ -134,12 +216,12 @@ async function findTopTracks(artists) {
         let results;
         let artistID;
         while (!processedSongs) {
-            sleep(1000); // yay spotify limiting!
+            sleep(300); // yay spotify limiting!
             artistID = artistIDs[j];
             results = await spotifyClient.getArtistTopTracks(artistID, 'US')
             if (results != null) {
-                console.log("song search results");
-                console.log(results);
+                console.log("song search results -" + j);
+                //console.log(results);
                 if (results.body != null && results.body.tracks != null && results.body.tracks.length >= 3) {
                     if (results.body.tracks[0] != null) {
                         var song = results.body.tracks[0].id;
@@ -211,7 +293,7 @@ async function runArtistSearch(rs) {
             }).catch(function (err) {
                 console.error(err);
             });
-        sleep(1600); // Spotify Rate Limiting, yay!
+        sleep(500); // Spotify Rate Limiting, yay!
     }
     //console.log("Done Finding Valid Artists: Current List \n");
     /*ArtistList.forEach(function (value, key) {
