@@ -177,18 +177,60 @@ async function buildPlayList(songs) {
             }
         }
 
+        let FFor = false;
+        let SFor = false;
+        let TFor = false;
+        let FFin = false;
+
+        var songSplitFourth = Math.floor((songsList.length) / 4);
+        var songSplitHalf = Math.floor((songsList.length) / 2);
+        var songSplitThird = Math.floor((songsList.length) * (3 / 4));
 
         while (!builtPlaylist && createdPlayList) {
             try {
                 console.log("User: " + clientUsername);
                 console.log("Playlist id: " + playlistID);
-                results = await spotifyClient.addTracksToPlaylist(clientUsername, playlistID, songsList.slice(0, (songsList.length/4)))
-                    .then(function (data) {
-                        console.log('Added tracks to playlist!');
-                        buildPlayList = true;
-                    }, function (err) {
-                        console.log('Something went wrong!', err);
-                    });
+                if (!FFor) {
+                    results = await spotifyClient.addTracksToPlaylist(clientUsername, playlistID, songsList.slice(0, songSplitFourth))
+                        .then(function (data) {
+                            console.log('Added 1st Fourth to playlist!');
+                            FFor = true;
+
+                        }, function (err) {
+                            console.log('Something went wrong!', err);
+                        });
+                }
+                else if (!SFor) {
+                    results = await spotifyClient.addTracksToPlaylist(clientUsername, playlistID, songsList.slice(songSplitFourth, songSplitHalf))
+                        .then(function (data) {
+                            console.log('Added 2nd Fourth to playlist!');
+                            SFor = true;
+
+                        }, function (err) {
+                            console.log('Something went wrong!', err);
+                        });
+
+                } else if (!TFor) {
+                    results = await spotifyClient.addTracksToPlaylist(clientUsername, playlistID, songsList.slice(songSplitHalf, songSplitThird))
+                        .then(function (data) {
+                            console.log('Added 3rd Fourth to playlist!');
+                            TFor = true;
+
+                        }, function (err) {
+                            console.log('Something went wrong!', err);
+                        });
+                } else if (!FFin) {
+                    results = await spotifyClient.addTracksToPlaylist(clientUsername, playlistID, songsList.slice(songSplitThird, songsList.length-1))
+                        .then(function (data) {
+                            console.log('Added Last Fourth to playlist!');
+                            TFor = true;
+
+                        }, function (err) {
+                            console.log('Something went wrong!', err);
+                        });
+                    builtPlaylist = true;
+                    FFin = true;
+                }
             }
             catch (ex) {
                 console.log("Build playlist");

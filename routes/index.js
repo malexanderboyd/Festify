@@ -48,6 +48,7 @@ router.get('/callback', function (req, res) {
                     spotify.getUserInfo()
                         .then(function (data) {
                             console.log(data);
+                            res.render('index', { title: 'Logged In' });
                         }).catch(function (err) {
                             console.log(err);
                         });
@@ -99,6 +100,7 @@ router.post('/test/submit', upload.single('fileUpload'), function (req, res, nex
                                         spotify.generatePlayList(data)
                                             .then(function (data) {
                                                 console.log(data);
+                                                res.render('test', { title: 'GENERATION COMPLETE' });
                                         }).catch(function (err) {
                                             console.log(err);
                                         });
