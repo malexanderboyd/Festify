@@ -69,6 +69,9 @@ var processedList = false;
 var processedSongs = false;
 var builtPlaylist = false;
 var createdPlayList = false;
+var finishedSending = false;
+var currentIndex = 1;
+var lastIndex = 0;
 var i = 1;
 var j = 0;
 let originalData;
@@ -177,59 +180,28 @@ async function buildPlayList(songs) {
             }
         }
 
-        let FFor = false;
-        let SFor = false;
-        let TFor = false;
-        let FFin = false;
 
-        var songSplitFourth = Math.floor((songsList.length) / 4);
-        var songSplitHalf = Math.floor((songsList.length) / 2);
-        var songSplitThird = Math.floor((songsList.length) * (3 / 4));
+        
 
         while (!builtPlaylist && createdPlayList) {
-            try {
-                console.log("User: " + clientUsername);
-                console.log("Playlist id: " + playlistID);
-                if (!FFor) {
-                    results = await spotifyClient.addTracksToPlaylist(clientUsername, playlistID, songsList.slice(0, songSplitFourth))
+            try
+            {
+                while (!finishedSending)
+                {
+                    results = await spotifyClient.addTracksToPlaylist(clientUsername, playlistID, songsList.slice(lastIndex, currentIndex))
                         .then(function (data) {
-                            console.log('Added 1st Fourth to playlist!');
-                            FFor = true;
-
-                        }, function (err) {
+                            console.log('Added songs to playlist!');
+                            if (currentIndex + 1 > songsList.length) {
+                                builtPlaylist = true;
+                                finishedSending = true;
+                            }
+                            else {
+                                lastIndex = currentIndex;
+                                currentIndex += 1;
+                            }
+                          }, function (err) {
                             console.log('Something went wrong!', err);
                         });
-                }
-                else if (!SFor) {
-                    results = await spotifyClient.addTracksToPlaylist(clientUsername, playlistID, songsList.slice(songSplitFourth, songSplitHalf))
-                        .then(function (data) {
-                            console.log('Added 2nd Fourth to playlist!');
-                            SFor = true;
-
-                        }, function (err) {
-                            console.log('Something went wrong!', err);
-                        });
-
-                } else if (!TFor) {
-                    results = await spotifyClient.addTracksToPlaylist(clientUsername, playlistID, songsList.slice(songSplitHalf, songSplitThird))
-                        .then(function (data) {
-                            console.log('Added 3rd Fourth to playlist!');
-                            TFor = true;
-
-                        }, function (err) {
-                            console.log('Something went wrong!', err);
-                        });
-                } else if (!FFin) {
-                    results = await spotifyClient.addTracksToPlaylist(clientUsername, playlistID, songsList.slice(songSplitThird, songsList.length-1))
-                        .then(function (data) {
-                            console.log('Added Last Fourth to playlist!');
-                            TFor = true;
-
-                        }, function (err) {
-                            console.log('Something went wrong!', err);
-                        });
-                    builtPlaylist = true;
-                    FFin = true;
                 }
             }
             catch (ex) {
@@ -262,7 +234,7 @@ async function findTopTracks(artists) {
             artistID = artistIDs[j];
             results = await spotifyClient.getArtistTopTracks(artistID, 'US')
             if (results != null) {
-                console.log("song search results -" + j);
+                console.log("song search results #" + j);
                 //console.log(results);
                 if (results.body != null && results.body.tracks != null && results.body.tracks.length >= 3) {
                     if (results.body.tracks[0] != null) {
@@ -280,12 +252,14 @@ async function findTopTracks(artists) {
                 }
                 if (j + 1 > artistIDs.length) {
                     processedSongs = true;
+                    j = 0;
                 } else {
                     j++;
                 }
             } else {
                 if (j + 1 > artistIDs.length) {
                     processedSongs = true;
+                    j = 0;
                 } else {
                     j++;
                 }
@@ -298,11 +272,6 @@ async function findTopTracks(artists) {
     return true;
     // // get top 3 tracks from each artists
 
-}
-
-
-function findTop(key) {
-    return ;
 }
 
 
@@ -355,8 +324,6 @@ async function findArtist(searchTerm) {
     searchData = searchData.replace(/,/g, ' ');
     searchData = searchData.replace(/and/g, '');
     searchData = searchData.replace(/AND/g, '');
-    searchData = searchData.replace(/./g, '');
-    searchData = searchData.trim();
     console.log("Current Search Term: " + searchData);
     let resultData;
     try {

@@ -20,6 +20,6 @@
     "node-env-file": "^0.1.8",
     "request": "^2.81.0",
     "serve-favicon": "~2.3.2",
-    "spotify-web-api-node": "^2.3.6"
+    "spotify-web-api-node": "^2.4.0"
   }
 }
