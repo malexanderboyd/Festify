@@ -1,0 +1,40 @@
+﻿extends layout
+
+block content
+  h1= title
+  p You're now logged into Spotify! This is so we can create a playlist for you (permissions).
+  p Please upload your music lineup with the buttons below. Below are some examples of previous uploads.
+  p Tacos are always fun for dayz
+
+  form(method='POST' action='/test/submit' enctype="multipart/form-data") 
+    div.form-group
+      input(type='file', placeholder='Upload Festival Pic', name='fileUpload')
+    
+
+
+    button.mdl-button.mdl-js-button.mdl-button--raised.mdl-button--colored(type='submit') Upload Lineup
+
+
+
+
+    h2 Previous Uploads (Examples)
+
+
+    div
+        h3 Firefly 2017
+        p
+         a(href="https://open.spotify.com/user/goboydorgohome/playlist/0ECHyAE3g5VpeIpnOdkCom") Playlist
+        p
+         img(src='https://s3.amazonaws.com/fireflyfestival/wp-content/uploads/2015/11/02184205/firefly-2017-lineup-poster.jpg')
+       
+        h3 Bonnaroo 2017  
+        p
+         a(href="https://open.spotify.com/user/goboydorgohome/playlist/0ECHyAE3g5VpeIpnOdkCom") Playlist
+        p
+         img(src='https://2ab9pu2w8o9xpg6w26xnz04d-wpengine.netdna-ssl.com/wp-content/uploads/2017/01/roo2017-poster-final.jpg')
+
+
+
+
+
+
