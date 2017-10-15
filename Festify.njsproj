@@ -54,11 +54,13 @@
     <Folder Include="typings\" />
     <Folder Include="typings\globals\" />
     <Folder Include="typings\globals\async\" />
+    <Folder Include="typings\globals\bull\" />
     <Folder Include="typings\globals\node\" />
     <Folder Include="views" />
   </ItemGroup>
   <ItemGroup>
     <TypeScriptCompile Include="typings\globals\async\index.d.ts" />
+    <TypeScriptCompile Include="typings\globals\bull\index.d.ts" />
     <TypeScriptCompile Include="typings\globals\node\index.d.ts" />
     <TypeScriptCompile Include="typings\index.d.ts" />
   </ItemGroup>

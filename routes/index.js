@@ -8,30 +8,10 @@ var spotify = require('../spotify')
 var stateKey = 'spotify_auth_state';
 var uuid = require('small-uuid');
 var HashMap = require('hashmap');
-var allPlaylists = new HashMap();
-var workingLists = [];
 const Logging = require('@google-cloud/logging');
-var kue = require('kue');
-
-var environment = require('node-env-file');
-
-try {
-    environment('./private/redis.env');
-} catch (e) {
-    console.log("Couldn't find environment variables: " + e);
-}
-
-
-
-var workerQueue = kue.createQueue({
-    redis: process.env.REDISURL
-});
-
-
-
 
 const multer = Multer({
-    storage: Multer.MemoryStorage,
+    storage: Multer.memoryStorage(),
     limits: {
         fileSize: 5 * 1024 * 1024
     }
@@ -119,11 +99,9 @@ function startFestifyProcess(photo, done) {
     }
 }
 
-
-workerQueue.process('festifyProcessing', function (job, done) {
-    startFestifyProcess(job.data.photo, done);
-});
-
+function handleError(ex) {
+    console.error(ex);
+}
 
 router.post('/v1/upload', multer.any(), (req, res, next) => {
 
@@ -136,15 +114,10 @@ router.post('/v1/upload', multer.any(), (req, res, next) => {
         next();
     }
     else {
-        let job = workerQueue.create('festifyProcessing', {
-            title: 'Processing new photo',
-            photo: req.files
-        }).save(function (err) {
-            if (!err) console.log(job.id);
-        });
+        startFestifyProcess(req.files, handleError);
         let queueID = uuid.create();
-        let queueURL = "/build/" + job.id;
-        records.workingLists.push(job.id);
+        let queueURL = "/build/" + queueID;
+        records.workingLists.push(queueID);
         res.status(202).send(queueURL);
     }
 });

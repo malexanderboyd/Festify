@@ -19,39 +19,15 @@ const visionClient = Vision({
 
 module.exports = {
   gcs,
-  retrieveText: function(upload)
-  {
-    return new Promise(function (fulfill, reject) {
-        var bucket = gcs.bucket('festify');
-      bucket.upload(upload.path, function(err, file) {
-          if (!err) {
-              console.log("Step 1: File " + upload.filename + " uploaded to bucket.");
-          retrieveText(upload)
-              .then(function (data) {
-                  console.log("Step 2: Text Extract - Complete");
-            fulfill(data);
-          }, function(err) {
-            console.error(err);
-            reject(err);
-          });
-        }
-          else {
-          console.error(err);
-          reject(err);
-        }
-      });
-    });
-  },
   uploadImage: function (file) {
       return new Promise((fulfill, reject) => {
           var bucket = gcs.bucket('festify');
           let gcsname = Date.now() + file[0].originalname;
           const blob = bucket.file(gcsname);
-          console.log(blob);
           const blobStream = blob.createWriteStream({
               metadata: {
                   contentType: file[0].mimetype
-              }
+              },
           });
 
           blobStream.on('error', (err) => {
@@ -66,10 +42,9 @@ module.exports = {
                       fulfill(text);
                   })
                   .catch(function (err) {
-                      console.error(err);
+                      reject(err);
                   })
           });
-
 
           blobStream.end(file[0].buffer);
       });
@@ -83,9 +58,8 @@ function retrieveText(fileName)
     .then((results) => {
       const detections = results[0];
       fulfill(detections);
-    },function(reason) {
-      console.log(reason);
-      reject(reason);
+          }, function (reason) {
+              reject(reason);
     });
   });
 }
