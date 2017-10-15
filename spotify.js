@@ -13,7 +13,7 @@ const SpotifyWebAPI = require('spotify-web-api-node');
 var spotifyClient = new SpotifyWebAPI({
     clientId: process.env.CLIENTID,
     clientSecret: process.env.CLIENTSECRET,
-    redirectUri: 'http://localhost:3000/callback'
+    redirectUri: 'https://stormy-headland-78067.herokuapp.com/callback'
 });
 
 
@@ -54,11 +54,13 @@ module.exports = {
     generatePlayList,
     getAuthURL,
     authorizeUser,
-    getUserInfo
+    getUserInfo,
+    setAccessTkn,
+    isAuthed
 };
 
 
-
+var isAuth = false;
 var playlistID = "";
 var clientUsername = "";
 var ArtistList = new HashMap();
@@ -70,12 +72,23 @@ var processedSongs = false;
 var builtPlaylist = false;
 var createdPlayList = false;
 var finishedSending = false;
-var currentIndex = 1;
+var currentIndex = 100;
 var lastIndex = 0;
 var i = 1;
 var j = 0;
 let originalData;
 
+
+
+function setAccessTkn(accessToken, userName) {
+    spotifyClient.setAccessToken(accessToken);
+    isAuth = true;
+    clientUsername = userName;
+}
+
+function isAuthed() {
+    return isAuth;
+}
 
 
 function getUserInfo() {
@@ -101,14 +114,19 @@ function getUserInfo() {
 
 
 function findArtists(dataSet) {
-    return new Promise(resolve => {
+    return new Promise((fulfill, reject) => {
         if (dataSet == null)
-            return;
+            reject();
+
         runArtistSearch(dataSet)
             .then((result) => {
                 if (result != null) {
-                    resolve(ArtistList); // artist list should be full of valid artist now.
+                    fulfill(ArtistList); // artist list should be full of valid artist now.
                 }
+            })
+            .catch((error) => {
+                console.error(error);
+                reject(error);
             });
     });
 }
@@ -134,6 +152,7 @@ function generateSongList(artists) {
                     resolve(songsList);
                 }
             }).catch(error => {
+                console.log("generateSongList playlist");
                 console.error(error);
             });
     });
@@ -150,9 +169,10 @@ function generatePlayList(songs)
         buildPlayList(songs)
             .then((result) => {
                 if (result != null) {
-                    resolve(songsList);
+                    resolve(result);
                 }
             }).catch(error => {
+                console.log("generatePlayList playlist");
                 console.error(error);
             });
     });
@@ -181,25 +201,31 @@ async function buildPlayList(songs) {
         }
 
 
-        
+        // Spotify Limits the number of songs that can be added to a playlist to 100 at a time.
+        var hundredBreak = Math.floor((songsList.length) / 100);
+        var leftOverSongs = (songs.length-1) - (hundredBreak * 100);
+        var lastSong = 0;
+        if (hundredBreak < 1)
+            currentIndex = leftOverSongs;
 
         while (!builtPlaylist && createdPlayList) {
-            try
-            {
-                while (!finishedSending)
-                {
+            try {
+                console.log("User: " + clientUsername);
+                console.log("Playlist id: " + playlistID);
+                while (!finishedSending) {
                     results = await spotifyClient.addTracksToPlaylist(clientUsername, playlistID, songsList.slice(lastIndex, currentIndex))
                         .then(function (data) {
                             console.log('Added songs to playlist!');
-                            if (currentIndex + 1 > songsList.length) {
+                            if (currentIndex + 1 > (hundredBreak * 100)) {
+                                spotifyClient.addTracksToPlaylist(clientUsername, playlistID, songsList.slice(currentIndex, currentIndex + leftOverSongs))
                                 builtPlaylist = true;
                                 finishedSending = true;
                             }
                             else {
                                 lastIndex = currentIndex;
-                                currentIndex += 1;
+                                currentIndex += 100;
                             }
-                          }, function (err) {
+                        }, function (err) {
                             console.log('Something went wrong!', err);
                         });
                 }
@@ -211,11 +237,13 @@ async function buildPlayList(songs) {
         }
 
 
-        return true;
+        return playlistID;
 
     }
     catch (Ex) {
+        console.log("buildd playlist");
         console.error(Ex);
+        return false;
     }
 
 
@@ -230,11 +258,10 @@ async function findTopTracks(artists) {
         let results;
         let artistID;
         while (!processedSongs) {
-            sleep(300); // yay spotify limiting!
             artistID = artistIDs[j];
             results = await spotifyClient.getArtistTopTracks(artistID, 'US')
             if (results != null) {
-                console.log("song search results #" + j);
+                console.log("song search results -" + j);
                 //console.log(results);
                 if (results.body != null && results.body.tracks != null && results.body.tracks.length >= 3) {
                     if (results.body.tracks[0] != null) {
@@ -250,16 +277,14 @@ async function findTopTracks(artists) {
                         songsList.push('spotify:track:' + song);
                     }
                 }
-                if (j + 1 > artistIDs.length) {
+                if (j + 1 > artistIDs.length-1) {
                     processedSongs = true;
-                    j = 0;
                 } else {
                     j++;
                 }
             } else {
-                if (j + 1 > artistIDs.length) {
+                if (j + 1 > artistIDs.length-1) {
                     processedSongs = true;
-                    j = 0;
                 } else {
                     j++;
                 }
@@ -267,11 +292,19 @@ async function findTopTracks(artists) {
         }
     }
     catch (e) {
+        console.log("Error searching top tracks:");
+        console.log(artistID);
         console.error(e);
+        return false;
     }
     return true;
     // // get top 3 tracks from each artists
 
+}
+
+
+function findTop(key) {
+    return ;
 }
 
 
@@ -295,11 +328,9 @@ async function runArtistSearch(rs) {
             .then((result) => {
                 if (result != null && result != undefined) {
 
-                    console.log("Current findArtistSearch");
+                    console.log("----------Current Valid Artist---------------");
                     console.log(result);
-                }
-                else {
-                    console.log("Undefined or Null Results.");
+                    console.log("----------Current Valid Artist---------------");
                 }
             }).catch(function (err) {
                 console.error(err);
@@ -318,12 +349,11 @@ async function findArtist(searchTerm) {
         return null;
 
     let searchData = searchTerm.toString();
-    let zeroRE = "/0/g";
-    let commaRE = "/,/gi";
     searchData = searchData.replace(/0/g, 'O');
     searchData = searchData.replace(/,/g, ' ');
     searchData = searchData.replace(/and/g, '');
     searchData = searchData.replace(/AND/g, '');
+    searchData = searchData.trim();
     console.log("Current Search Term: " + searchData);
     let resultData;
     try {

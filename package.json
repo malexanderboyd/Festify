@@ -9,6 +9,7 @@
     "start": "node ./bin/www"
   },
   "dependencies": {
+    "@google-cloud/logging": "^1.0.6",
     "@google-cloud/storage": "^0.8.0",
     "@google-cloud/vision": "^0.10.0",
     "async": "^2.4.0",
@@ -23,6 +24,7 @@
     "node-env-file": "^0.1.8",
     "request": "^2.81.0",
     "serve-favicon": "~2.3.2",
-    "spotify-web-api-node": "^2.4.0"
+    "small-uuid": "^1.0.1",
+    "spotify-web-api-node": "^2.3.6"
   }
 }

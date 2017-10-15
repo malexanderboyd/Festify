@@ -2,11 +2,9 @@ extends layout
 
 block content
   h1= title
-  p Welcome to #{title}
-  p Tacos are always fun for dayz
+  p Welcome to Festify v0.5
+  p This project was created by Alex Boyd
+  p Please report any issues to the Github Issues Tab, 
+    a(href="https://github.com/malexanderboyd/Festify/") Github
 
-  form(method='POST' action='/test/submit' enctype="multipart/form-data") 
-    div.form-group
-      input(type='file', placeholder='Upload Festival Pic', name='fileUpload')
-
-    button(type='submit') Signup
+  button.mdl-button.mdl-js-button.mdl-button--raised.mdl-button--colored(onclick='window.location.href="/login"') Login

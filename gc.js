@@ -12,8 +12,8 @@ var gcs = require('@google-cloud/storage')({
 
 // Instantiates a client
 const visionClient = Vision({
-  projectId: projectId
-  //credentials: './private/Festify-Vision.json'
+  projectId: projectId,
+  keyFilename: './private/Festify-Vision.json'
 });
 
 
@@ -22,7 +22,7 @@ module.exports = {
   retrieveText: function(upload)
   {
     return new Promise(function (fulfill, reject) {
-      var bucket = gcs.bucket('festify')
+        var bucket = gcs.bucket('festify');
       bucket.upload(upload.path, function(err, file) {
           if (!err) {
               console.log("Step 1: File " + upload.filename + " uploaded to bucket.");
@@ -35,18 +35,51 @@ module.exports = {
             reject(err);
           });
         }
-        else {
+          else {
+          console.error(err);
           reject(err);
         }
       });
     });
-  }
+  },
+  uploadImage: function (file) {
+      return new Promise((fulfill, reject) => {
+          var bucket = gcs.bucket('festify');
+          let gcsname = Date.now() + file[0].originalname;
+          const blob = bucket.file(gcsname);
+          console.log(blob);
+          const blobStream = blob.createWriteStream({
+              metadata: {
+                  contentType: file[0].mimetype
+              }
+          });
+
+          blobStream.on('error', (err) => {
+              reject(err);
+          });
+
+          blobStream.on('finish', () => {
+             // const publicURL = `https://storage.googleapis.com/` + bucket.name + `/` + gcsname;
+              // fulfill(publicURL);
+              retrieveText(gcsname)
+                  .then(function (text) {       
+                      fulfill(text);
+                  })
+                  .catch(function (err) {
+                      console.error(err);
+                  })
+          });
+
+
+          blobStream.end(file[0].buffer);
+      });
+    }
 }
 
-function retrieveText(upload)
+function retrieveText(fileName)
 {
   return new Promise(function(fulfill, reject) {
-    visionClient.detectText(gcs.bucket('festify').file(upload.filename))
+      visionClient.detectText(gcs.bucket('festify').file(fileName))
     .then((results) => {
       const detections = results[0];
       fulfill(detections);
@@ -54,6 +87,5 @@ function retrieveText(upload)
       console.log(reason);
       reject(reason);
     });
-
   });
 }
