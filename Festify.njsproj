@@ -23,12 +23,14 @@
     <Content Include="package.json" />
     <Compile Include="app.js" />
     <Compile Include="gc.js" />
+    <Compile Include="playlistStash.js" />
     <Compile Include="routes\building.js" />
     <Compile Include="spotify.js" />
     <Content Include="private\Festify-Storage.json" />
     <Content Include="private\Festify-Vision.json" />
     <Compile Include="routes\index.js" />
     <Compile Include="routes\users.js" />
+    <Content Include="private\redis.env" />
     <Content Include="views\begin.jade" />
     <Content Include="views\error.jade" />
     <Content Include="views\index.jade" />
