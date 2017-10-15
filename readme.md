@@ -1,5 +1,5 @@
 
-#Festify
+## Festify
 
 Festify is a spotify playlist generator using Music Festival Lineup pictures!
 
@@ -8,7 +8,7 @@ Using Google Vision API, Nodejs, and Express
 
 =====
 
-Mobile EDITION!
+## Mobile EDITION!
 
 [FestifyNative][festifynative] is a rework of festify from a web application into a android app!
 
@@ -21,7 +21,7 @@ Mobile EDITION!
 
 =======
 
-HEROKU EDITION!
+## HEROKU EDITION!
 
 [Heroku][heroku]
 
